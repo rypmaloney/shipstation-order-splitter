@@ -1,0 +1,25 @@
+{
+  "name": "shipstation-order-splitter",
+  "version": "1.0.0",
+  "description": "Utility script to split ship station orders based on SKU.",
+  "main": "split_orders.js",
+  "type": "module",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rypmaloney/shipstation-order-splitter.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rypmaloney/shipstation-order-splitter/issues"
+  },
+  "homepage": "https://github.com/rypmaloney/shipstation-order-splitter#readme",
+  "dependencies": {
+    "axios": "^1.2.1",
+    "dotenv": "^16.0.3",
+    "lodash": "^4.17.21"
+  }
+}
