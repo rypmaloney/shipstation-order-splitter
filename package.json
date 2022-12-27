@@ -5,7 +5,7 @@
   "main": "split_orders.js",
   "type": "module",
   "scripts": {
-    "test": "test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,13 @@
   "dependencies": {
     "axios": "^1.2.1",
     "dotenv": "^16.0.3",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "ts-jest": "^29.0.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.7",
+    "@babel/preset-env": "^7.20.2",
+    "babel-jest": "^29.3.1",
+    "jest": "^29.3.1"
   }
 }

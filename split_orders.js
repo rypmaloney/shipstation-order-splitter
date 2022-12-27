@@ -22,18 +22,31 @@ const findOrderGroups = (list) => {
         .filter((order) => order.items.length > 1)
         .filter((order) => new Date(order.orderDate) > start)
         .filter((order) => order.orderStatus != 'cancelled');
-    console.log(bulkOrders.length);
     let mixedOrders = [];
     for (let i = 0; i < bulkOrders.length; i++) {
         const grouped = _.groupBy(bulkOrders[i]['items'], (item) =>
             item['sku'].slice(0, 4)
         );
-        console.log(grouped);
         Object.keys(grouped).length > 1
             ? mixedOrders.push(bulkOrders[i])
             : null;
     }
     return mixedOrders;
+};
+
+const packageSplitOrders = (orderObject) => {
+    // for each item in line items
+    // create a new order with the items
+    const grouped = _.groupBy(orderObject.items, (item) =>
+        item['sku'].slice(0, 4)
+    );
+    let orderList = [];
+    for (property in grouped) {
+        let newOrder = JSON.parse(JSON.stringify(orderObject));
+        newOrder.items = grouped[property];
+        orderList.push(newOrder);
+    }
+    return orderList;
 };
 
 const shipstationApiCall = async (path, method, body) => {
@@ -72,9 +85,10 @@ const shipstationApiCall = async (path, method, body) => {
 
 (async () => {
     console.log('RUNNING');
-    let allShipStationOrders = await shipstationApiCall('orders/', 'get', null);
-    console.log(allShipStationOrders.orders.length);
-    let mixedOrders = findOrderGroups(allShipStationOrders.orders);
-    //console.log(mixedOrders);
+    // allShipStationOrders = await shipstationApiCall('orders/', 'get', null);
+    // mixedOrders = findOrderGroups(allShipStationOrders.orders);
+    //console.log(mixedOrders[0].items);
     // createShipstationOrder(order_object);
 })();
+
+export { findOrderGroups, packageSplitOrders };
