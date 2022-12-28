@@ -1,0 +1,21 @@
+import {
+    ok,
+    created,
+    badRequest,
+    notFound,
+    serverError,
+} from 'wix-http-functions';
+import wixData from 'wix-data';
+import { split_orders } from './split_orders';
+
+export function post_shippstationhook(request) {
+    //responds to https://www.knollwoodroad.com/_functions/get_shippstationhook/
+    let options = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+    split_orders();
+
+    return ok(options);
+}

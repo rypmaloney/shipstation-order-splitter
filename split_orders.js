@@ -96,11 +96,11 @@ const shipstationApiCall = async (path, method, body) => {
     }
 };
 
-(async () => {
-    console.log('RUNNING');
+export async function split_orders() {
+    console.log('Running split order script.');
     try {
         let allShipStationOrders = await shipstationApiCall(
-            'orders/s',
+            'orders/',
             'get',
             null
         );
@@ -109,14 +109,14 @@ const shipstationApiCall = async (path, method, body) => {
             // Post new list of split orders
             const packaged = packageSplitOrder(mixedOrders[i]);
             res = await shipstationApiCall(
-                '/orders/createorders',
+                '/orders/createorders/',
                 post,
                 packaged
             );
             // post update on cancelled order
             const cancelled = cancelSplitParent(mixedOrders[i]);
             res = await shipstationApiCall(
-                '/orders/createorder',
+                '/orders/createorder/',
                 post,
                 cancelled
             );
@@ -124,6 +124,11 @@ const shipstationApiCall = async (path, method, body) => {
     } catch (err) {
         console.error(err);
     }
+}
+
+(async () => {
+    console.log('Running split order script.');
+    split_orders();
 })();
 
 export { findOrderGroups, packageSplitOrders, cancelSplitParent };
