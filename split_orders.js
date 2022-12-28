@@ -2,11 +2,6 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// require('dotenv').config();
-// const _ = require('lodash/core');
-// const groupBy = require('lodash/groupby');
-// const axios = require('axios');
-
 // Live exports
 import _ from 'lodash';
 import axios from 'axios';
@@ -34,19 +29,32 @@ const findOrderGroups = (list) => {
     return mixedOrders;
 };
 
-const packageSplitOrders = (orderObject) => {
-    // for each item in line items
-    // create a new order with the items
+const packageSplitOrder = (orderObject) => {
+    /*
+    Create array of orders from given order object
+    */
     const grouped = _.groupBy(orderObject.items, (item) =>
         item['sku'].slice(0, 4)
     );
     let orderList = [];
-    for (property in grouped) {
+    for (const property in grouped) {
         let newOrder = JSON.parse(JSON.stringify(orderObject));
         newOrder.items = grouped[property];
+        newOrder.orderNumber = orderObject.orderNumber + '-' + property;
         orderList.push(newOrder);
     }
     return orderList;
+};
+
+const cancelSplitParent = (orderObject) => {
+    /*
+    Cancel the parent to split order.
+    Relabel as split parent.
+    */
+    let oldOrder = JSON.parse(JSON.stringify(orderObject));
+    oldOrder.orderNumber = oldOrder.orderNumber + '-retired';
+    oldOrder.orderStatus = 'cancelled';
+    return oldOrder;
 };
 
 const shipstationApiCall = async (path, method, body) => {
@@ -61,7 +69,7 @@ const shipstationApiCall = async (path, method, body) => {
     */
 
     const encoded_pass = Buffer.from(`${KEY}:${SECRET}`).toString('base64');
-
+    const message = `${path} failed to ${method} on Shipstation API.`;
     try {
         const config = {
             method: method || 'get',
@@ -77,18 +85,45 @@ const shipstationApiCall = async (path, method, body) => {
         }
 
         const response = await axios(config);
+
+        if (response.status != 200) {
+            console.error(message);
+            throw new Error(message);
+        }
         return response.data;
     } catch (err) {
-        throw new Error(err);
+        throw new Error(message);
     }
 };
 
 (async () => {
     console.log('RUNNING');
-    // allShipStationOrders = await shipstationApiCall('orders/', 'get', null);
-    // mixedOrders = findOrderGroups(allShipStationOrders.orders);
-    //console.log(mixedOrders[0].items);
-    // createShipstationOrder(order_object);
+    try {
+        let allShipStationOrders = await shipstationApiCall(
+            'orders/s',
+            'get',
+            null
+        );
+        let mixedOrders = findOrderGroups(allShipStationOrders);
+        for (let i = 0; i < mixedOrders.length; i++) {
+            // Post new list of split orders
+            const packaged = packageSplitOrder(mixedOrders[i]);
+            res = await shipstationApiCall(
+                '/orders/createorders',
+                post,
+                packaged
+            );
+            // post update on cancelled order
+            const cancelled = cancelSplitParent(mixedOrders[i]);
+            res = await shipstationApiCall(
+                '/orders/createorder',
+                post,
+                cancelled
+            );
+        }
+    } catch (err) {
+        console.error(err);
+    }
 })();
 
-export { findOrderGroups, packageSplitOrders };
+export { findOrderGroups, packageSplitOrders, cancelSplitParent };
