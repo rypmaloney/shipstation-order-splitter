@@ -1,0 +1,2 @@
+# Shipstation Order Splitter
+Node script to parse new orders sent to a Shipstation integration, find orders that should be repackaged based on SKU (which are generated based on shipper) and creates new orders. This is used in conjunction with a new order Webhook integrating to a Wix Site.
