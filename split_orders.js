@@ -1,11 +1,8 @@
-//DEV IMPORTS
 import * as dotenv from 'dotenv';
 dotenv.config();
 import { sample_order } from './mock_json.js';
-/* LIVE IMPORTS */
 import _ from 'lodash';
 import axios from 'axios';
-//import { getSecret } from 'wix-secrets-backend';
 
 const findOrderGroups = (objectList) => {
     /*
@@ -142,7 +139,7 @@ export async function split_orders() {
     );
     */
     //console.log(res);
-    //split_orders();
+    split_orders();
 })();
 
 export { findOrderGroups, packageSplitOrder, cancelSplitParent };

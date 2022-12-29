@@ -8,7 +8,13 @@ export function post_shippstationhook(request) {
             'Content-Type': 'application/json',
         },
     };
-    //split_orders()
     options.body = { status: 'success' };
+    try {
+        split_orders();
+    } catch (err) {
+        console.error(err);
+        options.body = { status: err };
+    }
+
     return ok(options);
 }
