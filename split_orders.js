@@ -1,19 +1,20 @@
 //DEV IMPORTS
 import * as dotenv from 'dotenv';
 dotenv.config();
-
-// Live exports
+import { sample_order } from './mock_json.js';
+/* LIVE IMPORTS */
 import _ from 'lodash';
 import axios from 'axios';
+//import { getSecret } from 'wix-secrets-backend';
 
-const findOrderGroups = (list) => {
+const findOrderGroups = (objectList) => {
     /*
     Return bulk orders,
     after specific date, that are not cancelled.
     Returns an object with
     */
     const start = new Date('12/15/22'); // Arbitrary start date for new orders
-    let bulkOrders = list
+    let bulkOrders = objectList
         .filter((order) => order.items.length > 1)
         .filter((order) => new Date(order.orderDate) > start)
         .filter((order) => order.orderStatus != 'cancelled');
@@ -41,6 +42,8 @@ const packageSplitOrder = (orderObject) => {
         let newOrder = JSON.parse(JSON.stringify(orderObject));
         newOrder.items = grouped[property];
         newOrder.orderNumber = orderObject.orderNumber + '-' + property;
+        delete newOrder.orderKey;
+        delete newOrder.orderId;
         orderList.push(newOrder);
     }
     return orderList;
@@ -52,7 +55,7 @@ const cancelSplitParent = (orderObject) => {
     Relabel as split parent.
     */
     let oldOrder = JSON.parse(JSON.stringify(orderObject));
-    oldOrder.orderNumber = oldOrder.orderNumber + '-retired';
+    oldOrder.orderNumber = oldOrder.orderNumber + '-split';
     oldOrder.orderStatus = 'cancelled';
     return oldOrder;
 };
@@ -84,15 +87,14 @@ const shipstationApiCall = async (path, method, body) => {
             config['data'] = JSON.stringify(body);
         }
 
-        const response = await axios(config);
+        const res = await axios(config);
 
-        if (response.status != 200) {
-            console.error(message);
+        if (res.status != 200) {
             throw new Error(message);
         }
-        return response.data;
+        return res.data;
     } catch (err) {
-        throw new Error(message);
+        console.error(err);
     }
 };
 
@@ -104,31 +106,43 @@ export async function split_orders() {
             'get',
             null
         );
-        let mixedOrders = findOrderGroups(allShipStationOrders);
+
+        let mixedOrders = findOrderGroups(allShipStationOrders.orders);
+
         for (let i = 0; i < mixedOrders.length; i++) {
             // Post new list of split orders
             const packaged = packageSplitOrder(mixedOrders[i]);
-            res = await shipstationApiCall(
+            let res = await shipstationApiCall(
                 '/orders/createorders/',
-                post,
+                'post',
                 packaged
             );
+
             // post update on cancelled order
             const cancelled = cancelSplitParent(mixedOrders[i]);
             res = await shipstationApiCall(
                 '/orders/createorder/',
-                post,
+                'post',
                 cancelled
             );
         }
     } catch (err) {
         console.error(err);
+        throw new Error(err);
     }
+    console.log('Complete.');
 }
 
 (async () => {
-    console.log('Running split order script.');
-    split_orders();
+    /*
+    let res = await shipstationApiCall(
+        '/orders/createorder/',
+        'post',
+        sample_order
+    );
+    */
+    //console.log(res);
+    //split_orders();
 })();
 
-export { findOrderGroups, packageSplitOrders, cancelSplitParent };
+export { findOrderGroups, packageSplitOrder, cancelSplitParent };
