@@ -14,6 +14,7 @@ export function post_shippstationhook(request) {
     } catch (err) {
         console.error(err);
         options.body = { status: err };
+        return badRequest(options);
     }
 
     return ok(options);

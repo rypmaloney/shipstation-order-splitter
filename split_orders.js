@@ -14,7 +14,8 @@ const findOrderGroups = (objectList) => {
     let bulkOrders = objectList
         .filter((order) => order.items.length > 1)
         .filter((order) => new Date(order.orderDate) > start)
-        .filter((order) => order.orderStatus != 'cancelled');
+        .filter((order) => order.orderStatus != 'cancelled')
+        .filter((order) => order.orderNumber.includes('-') == false); // ignore already split orders
     let mixedOrders = [];
     for (let i = 0; i < bulkOrders.length; i++) {
         const grouped = _.groupBy(bulkOrders[i]['items'], (item) =>
@@ -31,17 +32,22 @@ const packageSplitOrder = (orderObject) => {
     /*
     Create array of orders from given order object
     */
+
+    const coupon_codes = ['AV10'];
     const grouped = _.groupBy(orderObject.items, (item) =>
         item['sku'].slice(0, 4)
     );
     let orderList = [];
     for (const property in grouped) {
-        let newOrder = JSON.parse(JSON.stringify(orderObject));
-        newOrder.items = grouped[property];
-        newOrder.orderNumber = orderObject.orderNumber + '-' + property;
-        delete newOrder.orderKey;
-        delete newOrder.orderId;
-        orderList.push(newOrder);
+        if (!coupon_codes.includes(property)) {
+            // Don't make coupon code orders
+            let newOrder = JSON.parse(JSON.stringify(orderObject));
+            newOrder.items = grouped[property];
+            newOrder.orderNumber = orderObject.orderNumber + '-' + property;
+            delete newOrder.orderKey;
+            delete newOrder.orderId;
+            orderList.push(newOrder);
+        }
     }
     return orderList;
 };
@@ -107,20 +113,17 @@ export async function split_orders() {
         let mixedOrders = findOrderGroups(allShipStationOrders.orders);
 
         for (let i = 0; i < mixedOrders.length; i++) {
+            console.log(`Splitting order ${mixedOrders[i].orderNumber}.`);
             // Post new list of split orders
             const packaged = packageSplitOrder(mixedOrders[i]);
+            const cancelled = cancelSplitParent(mixedOrders[i]);
+            // Post one list of updates
+            packaged.push(cancelled);
+
             let res = await shipstationApiCall(
                 '/orders/createorders/',
                 'post',
                 packaged
-            );
-
-            // post update on cancelled order
-            const cancelled = cancelSplitParent(mixedOrders[i]);
-            res = await shipstationApiCall(
-                '/orders/createorder/',
-                'post',
-                cancelled
             );
         }
     } catch (err) {
@@ -138,8 +141,8 @@ export async function split_orders() {
         sample_order
     );
     */
-    //console.log(res);
-    split_orders();
+    // console.log(res);
+    // split_orders();
 })();
 
 export { findOrderGroups, packageSplitOrder, cancelSplitParent };
