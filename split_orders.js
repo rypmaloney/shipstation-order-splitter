@@ -104,8 +104,9 @@ const shipstationApiCall = async (path, method, body) => {
 export async function split_orders() {
     console.log('Running split order script.');
     try {
+        // Find all orders awaiting shipment
         let allShipStationOrders = await shipstationApiCall(
-            'orders/',
+            'orders/?orderStatus=awaiting_shipment',
             'get',
             null
         );
@@ -136,13 +137,14 @@ export async function split_orders() {
 (async () => {
     /*
     let res = await shipstationApiCall(
-        '/orders/createorder/',
-        'post',
-        sample_order
+        '/orders?orderStatus=awaiting_shipment',
+        'get',
+        null
     );
-    */
-    // console.log(res);
-    // split_orders();
+    console.log(res);
+     */
+
+    split_orders();
 })();
 
 export { findOrderGroups, packageSplitOrder, cancelSplitParent };
