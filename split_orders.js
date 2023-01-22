@@ -4,11 +4,14 @@ import { sample_order } from './mock_json.js';
 import _ from 'lodash';
 import axios from 'axios';
 
+/**
+ *  Return bulk orders, after specific date, that are not cancelled. Exclude already split orders.
+ * @param {*} objectList list of shipstation order objects.
+ * @returns bulk orders
+ */
 const findOrderGroups = (objectList) => {
     /*
-    Return bulk orders,
-    after specific date, that are not cancelled.
-    Returns an object with
+
     */
     const start = new Date('12/15/22'); // Arbitrary start date for new orders
     let bulkOrders = objectList
@@ -28,11 +31,12 @@ const findOrderGroups = (objectList) => {
     return mixedOrders;
 };
 
+/**
+ * Create array of orders from given order object
+ * @param {*} orderObject shipstation object.
+ * @returns  list of repackaged orders
+ */
 const packageSplitOrder = (orderObject) => {
-    /*
-    Create array of orders from given order object
-    */
-
     const coupon_codes = ['AV10'];
     const grouped = _.groupBy(orderObject.items, (item) =>
         item['sku'].slice(0, 4)
@@ -52,10 +56,14 @@ const packageSplitOrder = (orderObject) => {
     return orderList;
 };
 
+/**
+ * Cancels the parent to split order. Relabels parent order as split parent.
+ * @param {*} orderObject shipstation object.
+ * @returns
+ */
 const cancelSplitParent = (orderObject) => {
     /*
-    Cancel the parent to split order.
-    Relabel as split parent.
+
     */
     let oldOrder = JSON.parse(JSON.stringify(orderObject));
     oldOrder.orderNumber = oldOrder.orderNumber + '-split';
